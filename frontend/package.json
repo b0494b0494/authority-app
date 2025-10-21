@@ -1,0 +1,32 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "generate-grpc": "if not exist src\\grpc mkdir src\\grpc && copy ..\\proto\\directory\\v1\\directory.proto src\\grpc\\directory.proto && grpc_tools_node_protoc --plugin=protoc-gen-ts=.\\node_modules\\.bin\\protoc-gen-ts --ts_out=grpc_js:src/grpc --js_out=import_style=commonjs,binary:src/grpc --grpc_out=grpc_js:src/grpc --proto_path=src/grpc src/grpc/directory.proto",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.5.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@grpc/grpc-js": "^1.14.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.6",
+    "google-protobuf": "^4.0.0",
+    "grpc-tools": "^1.13.0",
+    "protoc-gen-ts": "^0.8.7",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
