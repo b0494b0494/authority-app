@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: directory_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d directory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: postgres -c 'shared_preload_libraries=ltree'
+
+  openfga:
+    image: openfga/openfga:latest
+    restart: always
+    command:
+      - run
+      - --datastore-engine=memory # For simplicity in sample, can be changed to postgres later
+      - --grpc-addr=0.0.0.0:8081 # Explicitly set gRPC address to IPv4
+    ports:
+      - "8080:8080" # HTTP API
+      - "8081:8081" # GRPC API
+      - "3000:3000" # Playground
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=[::]:8081"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+#  openfga-dashboard:
+#    image: openfga/dashboard:latest
+#    restart: always
+#    ports:
+#      - "4000:3000" # Map dashboard to 4000 to avoid conflict with openfga playground
+#    environment:
+#      FGA_SERVER_URL: http://openfga:8080
+#      FGA_SERVER_GRPC_URL: openfga:8081
+#      FGA_STORE_ID: 01HT0000000000000000000000 # Replace with your store ID if you have one, or leave empty to create a new one
+#      FGA_CLIENT_ID: dashboard
+#      FGA_CLIENT_SECRET: dashboard
+#    depends_on:
+#      - openfga
+
+  backend: # 新しく追加するGoバックエンドサービス
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "50051:50051" # gRPCサーバーのポートを公開
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres:5432/directory_db?sslmode=disable"
+      OPENFGA_API_URL: "http://openfga:8080"
+      OPENFGA_GRPC_API_URL: "openfga:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openfga:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=[::]:50051"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  go-cli: # 一時的なGo CLIサービス
+    image: golang:1.24-alpine
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+
+volumes:
+  postgres_data:
