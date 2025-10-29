@@ -1,0 +1,17 @@
+model
+  schema 1.1
+
+type user
+
+type directory
+  relations
+    define owner: [user]
+    define writer: [user] or owner
+    define reader: [user] or writer
+
+type file
+  relations
+    define owner: [user]
+    define parent: [directory]
+    define writer: [user] or owner or writer from parent
+    define reader: [user] or writer or reader from parent

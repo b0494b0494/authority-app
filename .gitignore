@@ -1,1 +1,5 @@
 node_modules/
+backend/backend.exe
+backend/server.exe
+.DS_Store
+backend/test.db
